@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+dist/
+
+frontend/node_modules/
+frontend/dist/
+
+backend/node_modules/
+backend/trains.db
+backend/*.sqlite
