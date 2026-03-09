@@ -30,14 +30,14 @@ export default function MyTickets() {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Tried to cancel ticket 🤷‍♂️')
-
-      // BUG 3: Cancel ticket button broken - backend does nothing, and frontend also doesn't refresh list
-      // Should remove ticket from state but intentionally not doing so
-
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to cancel ticket')
+      }
+      setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId))
+      setStatus(data.message || 'Ticket cancelled')
     } catch (error) {
       console.error('Error cancelling ticket:', error)
-      setStatus('Error cancelling ticket')
+      setStatus(error.message || 'Error cancelling ticket')
     }
   }
 
@@ -55,7 +55,7 @@ export default function MyTickets() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">My Tickets</h2>
-          <p className="text-gray-500">Manage your booked journeys (if the cancel button worked)</p>
+          <p className="text-gray-500">Manage your booked journeys and free up seats when plans change.</p>
         </div>
         <TrainSvg className="w-32 h-16" animated={true} />
       </div>
@@ -80,7 +80,7 @@ export default function MyTickets() {
       ) : (
         <div className="space-y-4">
           {tickets.map((ticket) => (
-            <Card key={ticket.id}>
+            <Card key={ticket.id} data-testid="ticket-card">
               <CardHeader className="flex flex-col lg:flex-row lg:justify-between lg:items-center">
                 <div>
                   <CardTitle className="text-xl text-blue-700">
@@ -101,7 +101,7 @@ export default function MyTickets() {
                   <p className="text-xs text-gray-400">Seat availability not updated (Bug #2)</p>
                 </div>
                 <Button variant="destructive" onClick={() => handleCancel(ticket.id)}>
-                  Cancel Ticket (Maybe)
+                  Cancel Ticket
                 </Button>
               </CardContent>
             </Card>

@@ -1,22 +1,30 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Booking flow', () => {
-  test('books a ticket and shows up in tickets page', async ({ page }) => {
+  test('books a ticket, updates seats, and lists the ticket', async ({ page }) => {
     await page.goto('http://localhost:3000/trains')
+    const firstCard = page.locator('[data-testid^="train-card-"]').first()
+    await expect(firstCard).toBeVisible()
+    const cardTestId = await firstCard.getAttribute('data-testid')
+    const seatLocator = firstCard.getByTestId('seat-availability')
+    const [availableBefore] = (await seatLocator.innerText()).split('/').map((value) => Number(value.trim()))
+    const seatsToBook = Math.max(1, Math.min(availableBefore, 2))
+    const riderName = `QA Rider ${Date.now()}`
 
-    await expect(page.getByText('Available Trains')).toBeVisible()
-
-    await page.getByRole('link', { name: 'Book Ticket' }).first().click()
-
-    await page.getByLabel('Passenger Name').fill('QA Rider')
-    await page.getByLabel('Seat Count').fill('2')
+    await firstCard.getByRole('link', { name: 'Book Ticket' }).click()
+    await page.getByLabel('Passenger Name').fill(riderName)
+    await page.getByLabel('Seat Count').fill(String(seatsToBook))
     await page.getByRole('button', { name: 'Book Ticket' }).click()
 
     await page.waitForURL('**/tickets', { timeout: 5000 })
+    await expect(page.getByText(riderName)).toBeVisible()
 
-    await expect(page.getByText('QA Rider')).toBeVisible()
+    await page.goto('http://localhost:3000/trains')
+    const updatedSeatLocator = page
+      .locator(`[data-testid="${cardTestId}"]`)
+      .getByTestId('seat-availability')
+    const [availableAfter] = (await updatedSeatLocator.innerText()).split('/').map((value) => Number(value.trim()))
 
-    // Intentional bug: seats_available should have decreased but doesn't.
-    // Test records current value for cross-check in separate spec.
+    expect(availableBefore - seatsToBook).toBe(availableAfter)
   })
 })

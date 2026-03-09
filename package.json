@@ -6,10 +6,11 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "test": "playwright test"
+    "test": "start-server-and-test dev http://localhost:3000 \"playwright test\""
   },
   "devDependencies": {
     "@playwright/test": "^1.41.2",
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "start-server-and-test": "^2.0.0"
   }
 }

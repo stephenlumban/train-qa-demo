@@ -9,6 +9,7 @@ export default function BookTicket() {
   const { trainId } = useParams()
   const navigate = useNavigate()
   const [train, setTrain] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     passengerName: '',
     seatCount: 1,
@@ -22,10 +23,14 @@ export default function BookTicket() {
   const fetchTrain = async () => {
     try {
       const response = await fetch(`http://localhost:3001/api/trains/${trainId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load train')
+      }
       const data = await response.json()
       setTrain(data)
     } catch (error) {
       console.error('Error fetching train:', error)
+      setStatus({ type: 'error', message: 'Unable to load train details.' })
     }
   }
 
@@ -37,32 +42,58 @@ export default function BookTicket() {
     }))
   }
 
+  const validateInputs = () => {
+    const errors = []
+    const seatCountNumber = Number(formData.seatCount)
+    if (!formData.passengerName.trim()) {
+      errors.push('Passenger name is required.')
+    }
+    if (!Number.isInteger(seatCountNumber) || seatCountNumber <= 0) {
+      errors.push('Seat count must be a positive whole number.')
+    }
+    if (train && seatCountNumber > train.seats_available) {
+      errors.push('Seat count exceeds available seats.')
+    }
+    return { errors, seatCountNumber }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const { errors, seatCountNumber } = validateInputs()
+    if (errors.length) {
+      setStatus({ type: 'error', message: errors.join(' ') })
+      return
+    }
 
-    // BUG 1: Missing validation - intentionally not checking empty name or negative seats
-    // Should validate but skipping to allow QA tools to catch
-
+    setSubmitting(true)
     try {
       const response = await fetch('http://localhost:3001/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          passenger_name: formData.passengerName,
+          passenger_name: formData.passengerName.trim(),
           train_id: Number(trainId),
-          seat_count: Number(formData.seatCount),
+          seat_count: seatCountNumber,
         }),
       })
-      const data = await response.json()
-      if (data.success) {
-        setStatus({ type: 'success', message: 'Ticket booked! (even if invalid 😅)' })
-        setTimeout(() => navigate('/tickets'), 1200)
-      } else {
-        setStatus({ type: 'error', message: 'Failed to book ticket.' })
+
+      const payload = await response.json()
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to book ticket')
       }
+
+      setStatus({ type: 'success', message: 'Ticket booked successfully!' })
+      setTrain((prev) =>
+        prev
+          ? { ...prev, seats_available: prev.seats_available - seatCountNumber }
+          : prev
+      )
+      setTimeout(() => navigate('/tickets'), 1200)
     } catch (error) {
       console.error('Error booking ticket:', error)
-      setStatus({ type: 'error', message: 'Error booking ticket.' })
+      setStatus({ type: 'error', message: error.message })
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -99,37 +130,37 @@ export default function BookTicket() {
           )}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Passenger Name (optional? 🤔)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Passenger Name</label>
               <Input
                 name="passengerName"
                 value={formData.passengerName}
                 onChange={handleChange}
-                placeholder="Leave blank to trigger bug"
+                placeholder="Jane Doe"
               />
-              <p className="text-xs text-gray-500 mt-1">BUG: This field should be required but isn't.</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seat Count
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Seat Count</label>
               <Input
                 type="number"
                 name="seatCount"
                 value={formData.seatCount}
                 onChange={handleChange}
-                min="-10"
+                min="1"
+                step="1"
               />
-              <p className="text-xs text-gray-500 mt-1">BUG: Negative numbers allowed 🙃</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Available seats: {train.seats_available}
+              </p>
             </div>
 
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                 Back
               </Button>
-              <Button type="submit">Book Ticket</Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Booking…' : 'Book Ticket'}
+              </Button>
             </div>
           </form>
         </CardContent>

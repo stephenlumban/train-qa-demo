@@ -33,49 +33,77 @@ export default function AdminTrains() {
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const statusClasses = {
+    success: 'bg-green-50 text-green-700',
+    error: 'bg-red-50 text-red-700',
+    info: 'bg-blue-50 text-blue-700',
+  }
+
+  const validateForm = () => {
+    const trimmed = {
+      name: formData.name.trim(),
+      origin: formData.origin.trim(),
+      destination: formData.destination.trim(),
+    }
+    const seatsTotal = Number(formData.seats_total)
+    const errors = []
+    if (!trimmed.name) errors.push('Train name is required.')
+    if (!trimmed.origin) errors.push('Origin is required.')
+    if (!trimmed.destination) errors.push('Destination is required.')
+    if (!Number.isInteger(seatsTotal) || seatsTotal <= 0) {
+      errors.push('Total seats must be a positive whole number.')
+    }
+    return { trimmed, seatsTotal, errors }
+  }
+
   const handleCreateTrain = async (e) => {
     e.preventDefault()
-    setStatus(null)
+    const { trimmed, seatsTotal, errors } = validateForm()
+    if (errors.length) {
+      setStatus({ type: 'error', message: errors.join(' ') })
+      return
+    }
 
     try {
+      setStatus({ type: 'info', message: 'Creating train…' })
       const response = await fetch('http://localhost:3001/api/trains', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name || `Mystery Train ${Math.floor(Math.random() * 1000)}`,
-          origin: formData.origin || 'Nowhere',
-          destination: formData.destination || 'Somewhere',
-          seats_total: Number(formData.seats_total) || 0,
+          name: trimmed.name,
+          origin: trimmed.origin,
+          destination: trimmed.destination,
+          seats_total: seatsTotal,
         }),
       })
       const data = await response.json()
-      if (data.success) {
-        setStatus('Train created! (hope it shows up...)')
-        fetchTrains()
-        setFormData({ name: '', origin: '', destination: '', seats_total: 50 })
-      } else {
-        setStatus('Failed to create train')
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create train')
       }
+      setStatus({ type: 'success', message: 'Train created successfully.' })
+      setFormData({ name: '', origin: '', destination: '', seats_total: 50 })
+      fetchTrains()
     } catch (error) {
       console.error('Error creating train:', error)
-      setStatus('Error creating train')
+      setStatus({ type: 'error', message: error.message || 'Error creating train' })
     }
   }
 
   const handleDeleteTrain = async (id) => {
-    setStatus(null)
     try {
+      setStatus({ type: 'info', message: 'Deleting train…' })
       const response = await fetch(`http://localhost:3001/api/trains/${id}`, {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Attempted to delete train')
-
-      // BUG 5: Delete API broken - backend doesn't delete, and we also don't refresh list
-      // Intentionally skipping fetchTrains here to show persistent bug
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete train')
+      }
+      setStatus({ type: 'success', message: data.message || 'Train deleted' })
+      setTrains((prev) => prev.filter((train) => train.id !== id))
     } catch (error) {
       console.error('Error deleting train:', error)
-      setStatus('Error deleting train')
+      setStatus({ type: 'error', message: error.message || 'Error deleting train' })
     }
   }
 
@@ -90,8 +118,8 @@ export default function AdminTrains() {
       </div>
 
       {status && (
-        <div className="bg-blue-50 text-blue-700 p-3 rounded-md">
-          {status}
+        <div className={`${statusClasses[status.type] ?? statusClasses.info} p-3 rounded-md`}>
+          {status.message}
         </div>
       )}
 
@@ -121,9 +149,11 @@ export default function AdminTrains() {
                 name="seats_total"
                 value={formData.seats_total}
                 onChange={handleChange}
-                min="-100"
+                min="1"
+                step="1"
+                required
               />
-              <p className="text-xs text-gray-500 mt-1">BUG: Negative seats possible here too.</p>
+              <p className="text-xs text-gray-500 mt-1">Enter the total number of seats on the train.</p>
             </div>
             <div className="md:col-span-2 flex justify-end">
               <Button type="submit">Create Train</Button>
@@ -150,14 +180,14 @@ export default function AdminTrains() {
             <CardContent className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-500">Created via admin panel</p>
-                <p className="text-xs text-gray-400">Duplicate bookings allowed (Bug #4)</p>
+                <p className="text-xs text-gray-400">Keep seats in sync with passenger bookings.</p>
               </div>
               <div className="space-x-2">
                 <Button variant="secondary" disabled>
                   Edit (Coming Soon)
                 </Button>
                 <Button variant="destructive" onClick={() => handleDeleteTrain(train.id)}>
-                  Delete (Probably)
+                  Delete
                 </Button>
               </div>
             </CardContent>

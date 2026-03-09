@@ -9,3 +9,4 @@ frontend/dist/
 backend/node_modules/
 backend/trains.db
 backend/*.sqlite
+test-results/

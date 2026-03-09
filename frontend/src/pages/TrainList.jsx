@@ -44,7 +44,11 @@ export default function TrainList() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {trains.map((train) => (
-          <Card key={train.id} className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-l-blue-500">
+          <Card
+            key={train.id}
+            data-testid={`train-card-${train.id}`}
+            className="hover:shadow-lg transition-shadow duration-300 border-l-4 border-l-blue-500"
+          >
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-xl text-blue-700">{train.name}</CardTitle>
@@ -67,10 +71,16 @@ export default function TrainList() {
                     <Users size={16} className="text-blue-600" />
                     <span className="text-sm text-gray-600">Available Seats</span>
                   </div>
-                  <span className={`font-bold ${
-                    train.seats_available > 50 ? 'text-green-600' : 
-                    train.seats_available > 20 ? 'text-orange-600' : 'text-red-600'
-                  }`}>
+                  <span
+                    data-testid="seat-availability"
+                    className={`font-bold ${
+                      train.seats_available > 50
+                        ? 'text-green-600'
+                        : train.seats_available > 20
+                        ? 'text-orange-600'
+                        : 'text-red-600'
+                    }`}
+                  >
                     {train.seats_available} / {train.seats_total}
                   </span>
                 </div>
