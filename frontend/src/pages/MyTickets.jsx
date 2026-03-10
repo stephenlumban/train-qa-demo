@@ -30,10 +30,13 @@ export default function MyTickets() {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Ticket cancelled.')
-
-      // BUG 3: Cancel ticket button broken - backend does nothing, frontend also doesn't refresh list
-
+      if (data.success) {
+        setStatus('Ticket cancelled successfully.')
+        // FIX BUG 3: Refresh the list so the cancelled ticket is removed immediately
+        fetchTickets()
+      } else {
+        setStatus(data.error || 'Failed to cancel ticket.')
+      }
     } catch (error) {
       console.error('Error cancelling ticket:', error)
       setStatus('Error cancelling ticket')

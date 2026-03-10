@@ -69,10 +69,13 @@ export default function AdminTrains() {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Train deleted.')
-
-      // BUG 5: Delete API broken - backend doesn't delete, and we don't refresh list
-
+      if (data.success) {
+        setStatus('Train deleted successfully.')
+        // FIX BUG 5: Refresh the list so the deleted train is removed immediately
+        fetchTrains()
+      } else {
+        setStatus(data.error || 'Failed to delete train.')
+      }
     } catch (error) {
       console.error('Error deleting train:', error)
       setStatus('Error deleting train.')

@@ -40,7 +40,15 @@ export default function BookTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // BUG 1: Missing validation - intentionally not checking empty name or negative seats
+    // FIX BUG 1: Validate before submitting
+    if (!formData.passengerName.trim()) {
+      setStatus({ type: 'error', message: 'Passenger name is required.' })
+      return
+    }
+    if (Number(formData.seatCount) <= 0) {
+      setStatus({ type: 'error', message: 'Seat count must be a positive number.' })
+      return
+    }
 
     try {
       const response = await fetch('http://localhost:3001/api/tickets', {
