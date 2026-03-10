@@ -41,7 +41,6 @@ export default function BookTicket() {
     e.preventDefault()
 
     // BUG 1: Missing validation - intentionally not checking empty name or negative seats
-    // Should validate but skipping to allow QA tools to catch
 
     try {
       const response = await fetch('http://localhost:3001/api/tickets', {
@@ -55,7 +54,7 @@ export default function BookTicket() {
       })
       const data = await response.json()
       if (data.success) {
-        setStatus({ type: 'success', message: 'Ticket booked! (even if invalid 😅)' })
+        setStatus({ type: 'success', message: 'Ticket booked successfully!' })
         setTimeout(() => navigate('/tickets'), 1200)
       } else {
         setStatus({ type: 'error', message: 'Failed to book ticket.' })
@@ -100,15 +99,15 @@ export default function BookTicket() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Passenger Name (optional? 🤔)
+                Passenger Name
               </label>
               <Input
+                id="passenger-name"
                 name="passengerName"
                 value={formData.passengerName}
                 onChange={handleChange}
-                placeholder="Leave blank to trigger bug"
+                placeholder="Enter passenger name"
               />
-              <p className="text-xs text-gray-500 mt-1">BUG: This field should be required but isn't.</p>
             </div>
 
             <div>
@@ -116,13 +115,13 @@ export default function BookTicket() {
                 Seat Count
               </label>
               <Input
+                id="seat-count"
                 type="number"
                 name="seatCount"
                 value={formData.seatCount}
                 onChange={handleChange}
                 min="-10"
               />
-              <p className="text-xs text-gray-500 mt-1">BUG: Negative numbers allowed 🙃</p>
             </div>
 
             <div className="flex justify-end space-x-2">

@@ -30,10 +30,9 @@ export default function MyTickets() {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Tried to cancel ticket 🤷‍♂️')
+      setStatus(data.message || 'Ticket cancelled.')
 
-      // BUG 3: Cancel ticket button broken - backend does nothing, and frontend also doesn't refresh list
-      // Should remove ticket from state but intentionally not doing so
+      // BUG 3: Cancel ticket button broken - backend does nothing, frontend also doesn't refresh list
 
     } catch (error) {
       console.error('Error cancelling ticket:', error)
@@ -55,7 +54,7 @@ export default function MyTickets() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">My Tickets</h2>
-          <p className="text-gray-500">Manage your booked journeys (if the cancel button worked)</p>
+          <p className="text-gray-500">Manage your booked journeys</p>
         </div>
         <TrainSvg className="w-32 h-16" animated={true} />
       </div>
@@ -74,7 +73,7 @@ export default function MyTickets() {
           </CardHeader>
           <CardContent className="text-center py-6">
             <TrainSvg className="w-24 h-12 mx-auto opacity-60" animated={false} />
-            <p className="text-gray-500 mt-2">Your tickets will magically appear after booking.</p>
+            <p className="text-gray-500 mt-2">Your tickets will appear here after booking.</p>
           </CardContent>
         </Card>
       ) : (
@@ -84,7 +83,7 @@ export default function MyTickets() {
               <CardHeader className="flex flex-col lg:flex-row lg:justify-between lg:items-center">
                 <div>
                   <CardTitle className="text-xl text-blue-700">
-                    {ticket.passenger_name || 'Anonymous Rider'}
+                    {ticket.passenger_name || 'Anonymous'}
                   </CardTitle>
                   <CardDescription>
                     {ticket.train_name} — {ticket.origin} to {ticket.destination}
@@ -97,11 +96,14 @@ export default function MyTickets() {
               </CardHeader>
               <CardContent className="flex justify-between items-center">
                 <div>
-                  <p className="text-sm text-gray-500">Booked via QA demo API</p>
-                  <p className="text-xs text-gray-400">Seat availability not updated (Bug #2)</p>
+                  <p className="text-sm text-gray-500">Train booking confirmed</p>
                 </div>
-                <Button variant="destructive" onClick={() => handleCancel(ticket.id)}>
-                  Cancel Ticket (Maybe)
+                <Button
+                  id={`cancel-ticket-${ticket.id}`}
+                  variant="destructive"
+                  onClick={() => handleCancel(ticket.id)}
+                >
+                  Cancel Ticket
                 </Button>
               </CardContent>
             </Card>

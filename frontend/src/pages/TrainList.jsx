@@ -67,8 +67,8 @@ export default function TrainList() {
                     <Users size={16} className="text-blue-600" />
                     <span className="text-sm text-gray-600">Available Seats</span>
                   </div>
-                  <span className={`font-bold ${
-                    train.seats_available > 50 ? 'text-green-600' : 
+                  <span id={`seats-${train.id}`} className={`font-bold ${
+                    train.seats_available > 50 ? 'text-green-600' :
                     train.seats_available > 20 ? 'text-orange-600' : 'text-red-600'
                   }`}>
                     {train.seats_available} / {train.seats_total}
@@ -88,7 +88,7 @@ export default function TrainList() {
                 </div>
 
                 <div className="flex space-x-2">
-                  <Button asChild className="flex-1">
+                  <Button asChild className="flex-1" id={`book-train-${train.id}`}>
                     <Link to={`/book/${train.id}`}>
                       Book Ticket
                     </Link>

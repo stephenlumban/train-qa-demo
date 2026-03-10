@@ -42,23 +42,23 @@ export default function AdminTrains() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name || `Mystery Train ${Math.floor(Math.random() * 1000)}`,
-          origin: formData.origin || 'Nowhere',
-          destination: formData.destination || 'Somewhere',
-          seats_total: Number(formData.seats_total) || 0,
+          name: formData.name,
+          origin: formData.origin,
+          destination: formData.destination,
+          seats_total: Number(formData.seats_total),
         }),
       })
       const data = await response.json()
       if (data.success) {
-        setStatus('Train created! (hope it shows up...)')
+        setStatus('Train created successfully.')
         fetchTrains()
         setFormData({ name: '', origin: '', destination: '', seats_total: 50 })
       } else {
-        setStatus('Failed to create train')
+        setStatus('Failed to create train.')
       }
     } catch (error) {
       console.error('Error creating train:', error)
-      setStatus('Error creating train')
+      setStatus('Error creating train.')
     }
   }
 
@@ -69,13 +69,13 @@ export default function AdminTrains() {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Attempted to delete train')
+      setStatus(data.message || 'Train deleted.')
 
-      // BUG 5: Delete API broken - backend doesn't delete, and we also don't refresh list
-      // Intentionally skipping fetchTrains here to show persistent bug
+      // BUG 5: Delete API broken - backend doesn't delete, and we don't refresh list
+
     } catch (error) {
       console.error('Error deleting train:', error)
-      setStatus('Error deleting train')
+      setStatus('Error deleting train.')
     }
   }
 
@@ -84,7 +84,7 @@ export default function AdminTrains() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">Admin Train Management</h2>
-          <p className="text-gray-500">Create, update, delete trains (well, mostly)</p>
+          <p className="text-gray-500">Create, update, and delete trains</p>
         </div>
         <TrainSvg className="w-32 h-16" animated={true} />
       </div>
@@ -98,32 +98,32 @@ export default function AdminTrains() {
       <Card>
         <CardHeader>
           <CardTitle>Add New Train</CardTitle>
-          <CardDescription>Fill in the form to create a shiny new train.</CardDescription>
+          <CardDescription>Fill in the form to create a new train.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="grid grid-cols-1 md:grid-cols-2 gap-4" onSubmit={handleCreateTrain}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Train Name</label>
-              <Input name="name" value={formData.name} onChange={handleChange} placeholder="Express Z9" />
+              <Input id="train-name" name="name" value={formData.name} onChange={handleChange} placeholder="Express Z9" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Origin</label>
-              <Input name="origin" value={formData.origin} onChange={handleChange} placeholder="City A" />
+              <Input id="train-origin" name="origin" value={formData.origin} onChange={handleChange} placeholder="City A" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-              <Input name="destination" value={formData.destination} onChange={handleChange} placeholder="City B" />
+              <Input id="train-destination" name="destination" value={formData.destination} onChange={handleChange} placeholder="City B" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Total Seats</label>
               <Input
+                id="train-seats"
                 type="number"
                 name="seats_total"
                 value={formData.seats_total}
                 onChange={handleChange}
                 min="-100"
               />
-              <p className="text-xs text-gray-500 mt-1">BUG: Negative seats possible here too.</p>
             </div>
             <div className="md:col-span-2 flex justify-end">
               <Button type="submit">Create Train</Button>
@@ -143,21 +143,24 @@ export default function AdminTrains() {
                 </CardDescription>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Seats: {train.seats_available}/{train.seats_total}</p>
+                <p className="text-sm text-gray-500">Available Seats: {train.seats_available}/{train.seats_total}</p>
                 <p className="text-xs text-gray-400">Train #{train.id}</p>
               </div>
             </CardHeader>
             <CardContent className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">Created via admin panel</p>
-                <p className="text-xs text-gray-400">Duplicate bookings allowed (Bug #4)</p>
+                <p className="text-sm text-gray-500">Manage this train from the admin panel</p>
               </div>
               <div className="space-x-2">
                 <Button variant="secondary" disabled>
-                  Edit (Coming Soon)
+                  Edit
                 </Button>
-                <Button variant="destructive" onClick={() => handleDeleteTrain(train.id)}>
-                  Delete (Probably)
+                <Button
+                  id={`delete-train-${train.id}`}
+                  variant="destructive"
+                  onClick={() => handleDeleteTrain(train.id)}
+                >
+                  Delete
                 </Button>
               </div>
             </CardContent>
