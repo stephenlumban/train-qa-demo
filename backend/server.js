@@ -177,7 +177,11 @@ app.delete('/api/trains/:id', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚆 Train QA Demo Backend running on http://localhost:${PORT}`);
-  console.log('✅ All bugs fixed on this branch!');
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚆 Train QA Demo Backend running on http://localhost:${PORT}`);
+    console.log('✅ All bugs fixed on this branch!');
+  });
+}
+
+module.exports = app;
