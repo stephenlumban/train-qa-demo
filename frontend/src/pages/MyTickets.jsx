@@ -14,7 +14,7 @@ export default function MyTickets() {
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/tickets')
+      const response = await fetch('https://train-qa-backend.vercel.app/api/tickets')
       const data = await response.json()
       setTickets(data)
     } catch (error) {
@@ -26,7 +26,7 @@ export default function MyTickets() {
 
   const handleCancel = async (ticketId) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/tickets/${ticketId}`, {
+      const response = await fetch(`https://train-qa-backend.vercel.app/api/tickets/${ticketId}`, {
         method: 'DELETE',
       })
       const data = await response.json()

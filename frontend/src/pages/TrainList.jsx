@@ -15,7 +15,7 @@ export default function TrainList() {
 
   const fetchTrains = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/trains')
+      const response = await fetch('https://train-qa-backend.vercel.app/api/trains')
       const data = await response.json()
       setTrains(data)
     } catch (error) {

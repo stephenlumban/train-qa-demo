@@ -1,14 +1,20 @@
-const sqlite3 = require('sqlite3').verbose();
+const { createClient } = require('@libsql/client');
 const path = require('path');
 
-const dbPath = path.join(__dirname, 'trains.db');
-const db = new sqlite3.Database(dbPath);
+// If deploying to Vercel, it uses the environment variables. Otherwise defaults to a local SQLite file.
+const dbUrl = process.env.TURSO_DATABASE_URL || `file:${path.join(__dirname, 'trains.db')}`;
+const dbAuthToken = process.env.TURSO_AUTH_TOKEN || undefined;
+
+const db = createClient({
+  url: dbUrl,
+  authToken: dbAuthToken
+});
 
 // Initialize database tables
-function initDatabase() {
-  db.serialize(() => {
+async function initDatabase() {
+  try {
     // Create trains table
-    db.run(`
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS trains (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -20,7 +26,7 @@ function initDatabase() {
     `);
 
     // Create tickets table
-    db.run(`
+    await db.execute(`
       CREATE TABLE IF NOT EXISTS tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         passenger_name TEXT NOT NULL,
@@ -30,24 +36,32 @@ function initDatabase() {
       )
     `);
 
-    // Seed with initial train data
-    db.run("DELETE FROM trains"); // Clear existing data
-    db.run("DELETE FROM tickets");
+    // Check if trains exist, if not, seed data
+    const res = await db.execute("SELECT COUNT(*) as count FROM trains");
+    const count = res.rows[0].count || res.rows[0]['COUNT(*)'] || 0;
     
-    const trains = [
-      { name: 'Express A1', origin: 'Tokyo', destination: 'Osaka', seats_total: 100, seats_available: 40 },
-      { name: 'Eurostar B2', origin: 'Paris', destination: 'Berlin', seats_total: 80, seats_available: 20 },
-      { name: 'Bullet C3', origin: 'New York', destination: 'Boston', seats_total: 120, seats_available: 75 },
-      { name: 'Orient D4', origin: 'London', destination: 'Istanbul', seats_total: 60, seats_available: 15 }
-    ];
+    if (count === 0) {
+      console.log("Seeding initial train data...");
+      const trains = [
+        { name: 'Express A1', origin: 'Tokyo', destination: 'Osaka', seats_total: 100, seats_available: 40 },
+        { name: 'Eurostar B2', origin: 'Paris', destination: 'Berlin', seats_total: 80, seats_available: 20 },
+        { name: 'Bullet C3', origin: 'New York', destination: 'Boston', seats_total: 120, seats_available: 75 },
+        { name: 'Orient D4', origin: 'London', destination: 'Istanbul', seats_total: 60, seats_available: 15 }
+      ];
 
-    trains.forEach(train => {
-      db.run(`
-        INSERT INTO trains (name, origin, destination, seats_total, seats_available) 
-        VALUES (?, ?, ?, ?, ?)
-      `, [train.name, train.origin, train.destination, train.seats_total, train.seats_available]);
-    });
-  });
+      for (const train of trains) {
+        await db.execute({
+          sql: `
+            INSERT INTO trains (name, origin, destination, seats_total, seats_available) 
+            VALUES (?, ?, ?, ?, ?)
+          `,
+          args: [train.name, train.origin, train.destination, train.seats_total, train.seats_available]
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Failed to initialize database", error);
+  }
 }
 
 module.exports = { db, initDatabase };

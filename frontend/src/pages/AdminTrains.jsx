@@ -20,7 +20,7 @@ export default function AdminTrains() {
 
   const fetchTrains = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/trains')
+      const response = await fetch('https://train-qa-backend.vercel.app/api/trains')
       const data = await response.json()
       setTrains(data)
     } catch (error) {
@@ -38,7 +38,7 @@ export default function AdminTrains() {
     setStatus(null)
 
     try {
-      const response = await fetch('http://localhost:3001/api/trains', {
+      const response = await fetch('https://train-qa-backend.vercel.app/api/trains', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ export default function AdminTrains() {
   const handleDeleteTrain = async (id) => {
     setStatus(null)
     try {
-      const response = await fetch(`http://localhost:3001/api/trains/${id}`, {
+      const response = await fetch(`https://train-qa-backend.vercel.app/api/trains/${id}`, {
         method: 'DELETE',
       })
       const data = await response.json()

@@ -21,7 +21,7 @@ export default function BookTicket() {
 
   const fetchTrain = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/trains/${trainId}`)
+      const response = await fetch(`https://train-qa-backend.vercel.app/api/trains/${trainId}`)
       const data = await response.json()
       setTrain(data)
     } catch (error) {
@@ -43,7 +43,7 @@ export default function BookTicket() {
     // BUG 1: Missing validation - intentionally not checking empty name or negative seats
 
     try {
-      const response = await fetch('http://localhost:3001/api/tickets', {
+      const response = await fetch('https://train-qa-backend.vercel.app/api/tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
