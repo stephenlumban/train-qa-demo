@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import TrainSvg from '../components/TrainSvg'
+import { apiUrl } from '../lib/api'
 
 export default function BookTicket() {
   const { trainId } = useParams()
@@ -21,7 +22,7 @@ export default function BookTicket() {
 
   const fetchTrain = async () => {
     try {
-      const response = await fetch(`https://train-qa-backend.vercel.app/api/trains/${trainId}`)
+      const response = await fetch(apiUrl(`/trains/${trainId}`))
       const data = await response.json()
       setTrain(data)
     } catch (error) {
@@ -39,25 +40,37 @@ export default function BookTicket() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setStatus(null)
 
-    // BUG 1: Missing validation - intentionally not checking empty name or negative seats
+    const passengerName = formData.passengerName.trim()
+    const seatCount = Number(formData.seatCount)
+
+    if (!passengerName) {
+      setStatus({ type: 'error', message: 'Passenger name is required.' })
+      return
+    }
+
+    if (!Number.isInteger(seatCount) || seatCount <= 0) {
+      setStatus({ type: 'error', message: 'Seat count must be greater than 0.' })
+      return
+    }
 
     try {
-      const response = await fetch('https://train-qa-backend.vercel.app/api/tickets', {
+      const response = await fetch(apiUrl('/tickets'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          passenger_name: formData.passengerName,
+          passenger_name: passengerName,
           train_id: Number(trainId),
-          seat_count: Number(formData.seatCount),
+          seat_count: seatCount,
         }),
       })
       const data = await response.json()
-      if (data.success) {
+      if (response.ok && data.success) {
         setStatus({ type: 'success', message: 'Ticket booked successfully!' })
         setTimeout(() => navigate('/tickets'), 1200)
       } else {
-        setStatus({ type: 'error', message: 'Failed to book ticket.' })
+        setStatus({ type: 'error', message: data.error || 'Failed to book ticket.' })
       }
     } catch (error) {
       console.error('Error booking ticket:', error)
@@ -98,7 +111,7 @@ export default function BookTicket() {
           )}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="passenger-name" className="block text-sm font-medium text-gray-700 mb-1">
                 Passenger Name
               </label>
               <Input
@@ -111,7 +124,7 @@ export default function BookTicket() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="seat-count" className="block text-sm font-medium text-gray-700 mb-1">
                 Seat Count
               </label>
               <Input
@@ -120,7 +133,7 @@ export default function BookTicket() {
                 name="seatCount"
                 value={formData.seatCount}
                 onChange={handleChange}
-                min="-10"
+                min="1"
               />
             </div>
 

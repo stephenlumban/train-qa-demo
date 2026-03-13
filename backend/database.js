@@ -10,6 +10,25 @@ const db = createClient({
   authToken: dbAuthToken
 });
 
+const seedTrains = [
+  { name: 'Express A1', origin: 'Tokyo', destination: 'Osaka', seats_total: 100, seats_available: 40 },
+  { name: 'Eurostar B2', origin: 'Paris', destination: 'Berlin', seats_total: 80, seats_available: 20 },
+  { name: 'Bullet C3', origin: 'New York', destination: 'Boston', seats_total: 120, seats_available: 75 },
+  { name: 'Orient D4', origin: 'London', destination: 'Istanbul', seats_total: 60, seats_available: 15 }
+];
+
+async function seedDatabase() {
+  for (const train of seedTrains) {
+    await db.execute({
+      sql: `
+        INSERT INTO trains (name, origin, destination, seats_total, seats_available)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      args: [train.name, train.origin, train.destination, train.seats_total, train.seats_available]
+    });
+  }
+}
+
 // Initialize database tables
 async function initDatabase() {
   try {
@@ -42,26 +61,18 @@ async function initDatabase() {
     
     if (count === 0) {
       console.log("Seeding initial train data...");
-      const trains = [
-        { name: 'Express A1', origin: 'Tokyo', destination: 'Osaka', seats_total: 100, seats_available: 40 },
-        { name: 'Eurostar B2', origin: 'Paris', destination: 'Berlin', seats_total: 80, seats_available: 20 },
-        { name: 'Bullet C3', origin: 'New York', destination: 'Boston', seats_total: 120, seats_available: 75 },
-        { name: 'Orient D4', origin: 'London', destination: 'Istanbul', seats_total: 60, seats_available: 15 }
-      ];
-
-      for (const train of trains) {
-        await db.execute({
-          sql: `
-            INSERT INTO trains (name, origin, destination, seats_total, seats_available) 
-            VALUES (?, ?, ?, ?, ?)
-          `,
-          args: [train.name, train.origin, train.destination, train.seats_total, train.seats_available]
-        });
-      }
+      await seedDatabase();
     }
   } catch (error) {
     console.error("Failed to initialize database", error);
   }
 }
 
-module.exports = { db, initDatabase };
+async function resetDatabase() {
+  await db.execute('DELETE FROM tickets');
+  await db.execute('DELETE FROM trains');
+  await db.execute("DELETE FROM sqlite_sequence WHERE name IN ('tickets', 'trains')");
+  await seedDatabase();
+}
+
+module.exports = { db, initDatabase, resetDatabase };

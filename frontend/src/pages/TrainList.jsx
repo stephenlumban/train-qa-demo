@@ -4,6 +4,7 @@ import { MapPin, Users, Clock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import TrainSvg from '../components/TrainSvg'
+import { apiUrl } from '../lib/api'
 
 export default function TrainList() {
   const [trains, setTrains] = useState([])
@@ -15,7 +16,7 @@ export default function TrainList() {
 
   const fetchTrains = async () => {
     try {
-      const response = await fetch('https://train-qa-backend.vercel.app/api/trains')
+      const response = await fetch(apiUrl('/trains'))
       const data = await response.json()
       setTrains(data)
     } catch (error) {
