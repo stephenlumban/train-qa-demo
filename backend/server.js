@@ -8,6 +8,14 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+function normalizePassengerName(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function parseSeatCount(value) {
+  return Number.parseInt(value, 10);
+}
+
 // Initialize database on startup
 initDatabase();
 
@@ -40,24 +48,63 @@ app.get('/api/trains/:id', async (req, res) => {
   }
 });
 
-// POST /api/tickets - Book a ticket (BUGGY - intentional for QA)
 app.post('/api/tickets', async (req, res) => {
-  const { passenger_name, train_id, seat_count } = req.body;
-  
-  // BUG 1: Missing validation - should reject empty names and negative seat counts
-  // BUG 6: Always returns 200 even for invalid requests
-  
-  // BUG 2: Seat count not updating - missing logic to decrease seats_available
+  const passengerName = normalizePassengerName(req.body.passenger_name);
+  const trainId = Number.parseInt(req.body.train_id, 10);
+  const seatCount = parseSeatCount(req.body.seat_count);
+
+  if (!passengerName) {
+    res.status(400).json({ error: 'Passenger name is required.' });
+    return;
+  }
+
+  if (!Number.isInteger(trainId) || trainId <= 0) {
+    res.status(400).json({ error: 'A valid train is required.' });
+    return;
+  }
+
+  if (!Number.isInteger(seatCount) || seatCount <= 0) {
+    res.status(400).json({ error: 'Seat count must be greater than 0.' });
+    return;
+  }
+
   try {
+    const trainResult = await db.execute({
+      sql: 'SELECT * FROM trains WHERE id = ?',
+      args: [trainId]
+    });
+
+    if (trainResult.rows.length === 0) {
+      res.status(404).json({ error: 'Train not found.' });
+      return;
+    }
+
+    const train = trainResult.rows[0];
+    if (train.seats_available < seatCount) {
+      res.status(400).json({ error: 'Not enough seats available for this train.' });
+      return;
+    }
+
+    const duplicateResult = await db.execute({
+      sql: 'SELECT id FROM tickets WHERE train_id = ? AND passenger_name = ?',
+      args: [trainId, passengerName]
+    });
+
+    if (duplicateResult.rows.length > 0) {
+      res.status(409).json({ error: 'You already have a booking for this train.' });
+      return;
+    }
+
     const result = await db.execute({
       sql: 'INSERT INTO tickets (passenger_name, train_id, seat_count) VALUES (?, ?, ?)',
-      args: [passenger_name, train_id, seat_count]
+      args: [passengerName, trainId, seatCount]
     });
-    
-    // Should update seats_available here but it's missing (BUG 2)
-    // Correct code would be:
-    // await db.execute({ sql: 'UPDATE trains SET seats_available = seats_available - ? WHERE id = ?', args: [seat_count, train_id] });
-    
+
+    await db.execute({
+      sql: 'UPDATE trains SET seats_available = seats_available - ? WHERE id = ?',
+      args: [seatCount, trainId]
+    });
+
     res.json({ success: true, ticketId: Number(result.lastInsertRowid) });
   } catch (err) {
     res.status(500).json({ error: 'Database error' });
@@ -78,18 +125,36 @@ app.get('/api/tickets', async (req, res) => {
   }
 });
 
-// DELETE /api/tickets/:id - Cancel ticket (BUGGY)
 app.delete('/api/tickets/:id', async (req, res) => {
   const { id } = req.params;
-  
-  // BUG 3: Cancel ticket button broken - this endpoint doesn't actually delete
-  // It just returns success without doing anything
-  
-  // Correct code would be:
-  // await db.execute({ sql: 'DELETE FROM tickets WHERE id = ?', args: [id] });
-  
-  // But instead we just return success (broken)
-  res.json({ success: true, message: 'Ticket cancelled' });
+
+  try {
+    const ticketResult = await db.execute({
+      sql: 'SELECT id, train_id, seat_count FROM tickets WHERE id = ?',
+      args: [id]
+    });
+
+    if (ticketResult.rows.length === 0) {
+      res.status(404).json({ error: 'Ticket not found.' });
+      return;
+    }
+
+    const ticket = ticketResult.rows[0];
+
+    await db.execute({
+      sql: 'DELETE FROM tickets WHERE id = ?',
+      args: [id]
+    });
+
+    await db.execute({
+      sql: 'UPDATE trains SET seats_available = MIN(seats_total, seats_available + ?) WHERE id = ?',
+      args: [ticket.seat_count, ticket.train_id]
+    });
+
+    res.json({ success: true, message: 'Ticket cancelled.' });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // POST /api/trains - Create train (admin)
@@ -130,16 +195,34 @@ app.put('/api/trains/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/trains/:id - Delete train (BUGGY)
 app.delete('/api/trains/:id', async (req, res) => {
   const { id } = req.params;
-  
-  // BUG 5: Delete train API broken - doesn't actually delete from database
-  // Correct code would be:
-  // await db.execute({ sql: 'DELETE FROM trains WHERE id = ?', args: [id] });
-  
-  // But instead we just return success without deleting (broken)
-  res.json({ success: true, message: 'Train deleted' });
+
+  try {
+    const existingTrain = await db.execute({
+      sql: 'SELECT id, name FROM trains WHERE id = ?',
+      args: [id]
+    });
+
+    if (existingTrain.rows.length === 0) {
+      res.status(404).json({ error: 'Train not found.' });
+      return;
+    }
+
+    await db.execute({
+      sql: 'DELETE FROM tickets WHERE train_id = ?',
+      args: [id]
+    });
+
+    await db.execute({
+      sql: 'DELETE FROM trains WHERE id = ?',
+      args: [id]
+    });
+
+    res.json({ success: true, message: 'Train deleted.', trainId: Number(id) });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Vercel serverless functions require the app to be exported!

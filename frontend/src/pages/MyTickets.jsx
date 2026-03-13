@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
 import TrainSvg from '../components/TrainSvg'
+import { apiUrl } from '../lib/api'
 
 export default function MyTickets() {
   const [tickets, setTickets] = useState([])
@@ -14,7 +15,7 @@ export default function MyTickets() {
 
   const fetchTickets = async () => {
     try {
-      const response = await fetch('https://train-qa-backend.vercel.app/api/tickets')
+      const response = await fetch(apiUrl('/tickets'))
       const data = await response.json()
       setTickets(data)
     } catch (error) {
@@ -26,13 +27,16 @@ export default function MyTickets() {
 
   const handleCancel = async (ticketId) => {
     try {
-      const response = await fetch(`https://train-qa-backend.vercel.app/api/tickets/${ticketId}`, {
+      const response = await fetch(apiUrl(`/tickets/${ticketId}`), {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Ticket cancelled.')
-
-      // BUG 3: Cancel ticket button broken - backend does nothing, frontend also doesn't refresh list
+      if (response.ok) {
+        setTickets((current) => current.filter((ticket) => ticket.id !== ticketId))
+        setStatus(data.message || 'Ticket cancelled.')
+      } else {
+        setStatus(data.error || 'Failed to cancel ticket.')
+      }
 
     } catch (error) {
       console.error('Error cancelling ticket:', error)
