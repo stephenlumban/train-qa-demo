@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import TrainSvg from '../components/TrainSvg'
+import { apiUrl } from '../lib/api'
 
 export default function AdminTrains() {
   const [trains, setTrains] = useState([])
@@ -20,7 +21,7 @@ export default function AdminTrains() {
 
   const fetchTrains = async () => {
     try {
-      const response = await fetch('https://train-qa-backend.vercel.app/api/trains')
+      const response = await fetch(apiUrl('/trains'))
       const data = await response.json()
       setTrains(data)
     } catch (error) {
@@ -38,7 +39,7 @@ export default function AdminTrains() {
     setStatus(null)
 
     try {
-      const response = await fetch('https://train-qa-backend.vercel.app/api/trains', {
+      const response = await fetch(apiUrl('/trains'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,13 +66,16 @@ export default function AdminTrains() {
   const handleDeleteTrain = async (id) => {
     setStatus(null)
     try {
-      const response = await fetch(`https://train-qa-backend.vercel.app/api/trains/${id}`, {
+      const response = await fetch(apiUrl(`/trains/${id}`), {
         method: 'DELETE',
       })
       const data = await response.json()
-      setStatus(data.message || 'Train deleted.')
-
-      // BUG 5: Delete API broken - backend doesn't delete, and we don't refresh list
+      if (response.ok) {
+        setTrains((current) => current.filter((train) => train.id !== id))
+        setStatus(data.message || 'Train deleted.')
+      } else {
+        setStatus(data.error || 'Failed to delete train.')
+      }
 
     } catch (error) {
       console.error('Error deleting train:', error)
