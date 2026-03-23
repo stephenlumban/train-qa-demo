@@ -3,6 +3,7 @@ import { Train, Ticket, Settings } from 'lucide-react'
 import TrainList from './pages/TrainList'
 import BookTicket from './pages/BookTicket'
 import MyTickets from './pages/MyTickets'
+import BuySnacks from './pages/BuySnacks'
 import AdminTrains from './pages/AdminTrains'
 import TrainSvg from './components/TrainSvg'
 
@@ -39,6 +40,12 @@ function App() {
                   <Settings size={20} />
                   <span>Admin</span>
                 </Link>
+                <Link
+                  to="/snacks"
+                  className="flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  <span>Snacks</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -51,6 +58,7 @@ function App() {
             <Route path="/book/:trainId" element={<BookTicket />} />
             <Route path="/tickets" element={<MyTickets />} />
             <Route path="/admin/trains" element={<AdminTrains />} />
+            <Route path="/snacks" element={<BuySnacks />} />
           </Routes>
         </main>
       </div>
