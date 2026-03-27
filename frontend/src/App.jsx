@@ -6,12 +6,13 @@ import MyTickets from './pages/MyTickets'
 import BuySnacks from './pages/BuySnacks'
 import AdminTrains from './pages/AdminTrains'
 import TrainSvg from './components/TrainSvg'
+import TrainAssistant from './components/TrainAssistant'
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <nav className="bg-white shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 relative">
+        <nav className="bg-white shadow-lg relative z-50">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex justify-between items-center py-4">
               <div className="flex items-center space-x-4">
@@ -51,7 +52,7 @@ function App() {
           </div>
         </nav>
 
-        <main className="max-w-6xl mx-auto py-8 px-4">
+        <main className="max-w-6xl mx-auto py-8 px-4 pb-24">
           <Routes>
             <Route path="/" element={<TrainList />} />
             <Route path="/trains" element={<TrainList />} />
@@ -61,6 +62,8 @@ function App() {
             <Route path="/snacks" element={<BuySnacks />} />
           </Routes>
         </main>
+
+        <TrainAssistant />
       </div>
     </Router>
   )
